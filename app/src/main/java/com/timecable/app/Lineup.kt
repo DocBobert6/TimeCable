@@ -8,13 +8,13 @@ object Lineup {
 
     // Edit freely: any archive.org collection works. Unknown collections just show NO SIGNAL.
     val channels = listOf(
-        ChannelDef(101, "VAULT", "collection:prelinger$V"),
-        ChannelDef(102, "TOONS", "collection:animationandcartoons$V"),
-        ChannelDef(103, "RERUN", "collection:classic_tv$V"),
-        ChannelDef(104, "ADS", "collection:classic_tv_commercials$V"),
-        ChannelDef(105, "NOIR", "collection:Film_Noir$V"),
-        ChannelDef(106, "SILENT", "collection:silent_films$V"),
-        ChannelDef(107, "SCIFI", "collection:SciFi_Horror$V"),
-        ChannelDef(108, "CINEMA", "collection:feature_films$V"),
+        ChannelDef(301, "REEL", "collection:prelinger$V"),
+        ChannelDef(302, "INKWELL", "collection:animationandcartoons$V"),
+        ChannelDef(303, "RETROTV", "collection:classic_tv$V"),
+        ChannelDef(304, "SPOTS", "collection:classic_tv_commercials$V"),
+        ChannelDef(305, "SHADOW", "collection:Film_Noir$V"),
+        ChannelDef(306, "HUSH", "collection:silent_films$V"),
+        ChannelDef(307, "ORBIT", "collection:SciFi_Horror$V"),
+        ChannelDef(308, "MATINEE", "collection:feature_films$V"),
     )
 }
