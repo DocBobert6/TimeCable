@@ -60,11 +60,17 @@ class CableBox(private val ctx: Context) {
     var sel by mutableIntStateOf(0)
     var shift by mutableIntStateOf(0)
 
-    // CRT (off by default)
-    var crtMode by mutableStateOf(CrtMode.OFF)
-    var crtParams by mutableStateOf(CrtParams.Default)
+    // CRT: off by default; style, on/off and parameters are remembered between launches.
+    private val prefs = ctx.getSharedPreferences("crt", Context.MODE_PRIVATE)
+    var crtOn by mutableStateOf(prefs.getBoolean("on", false))
+    var crtStyle by mutableStateOf(
+        CrtStyle.entries.firstOrNull { it.name == prefs.getString("style", null) } ?: CrtStyle.LOTTES_FAST,
+    )
+    var crtParams by mutableStateOf(
+        CrtParams.fromArray(CrtParams.Default.toArray().mapIndexed { i, d -> prefs.getFloat("p$i", d) }.toFloatArray()),
+    )
     var crtMenu by mutableStateOf(false)          // simple on-screen parameter panel
-    var crtParamIndex by mutableIntStateOf(0)     // which param is highlighted in the menu
+    var crtParamIndex by mutableIntStateOf(0)     // highlighted row: 0 = style, 1.. = crtSpecs
 
     // Guide geometry (logical, matches existing 2000s grid density)
     var guideHalfMinutes by mutableIntStateOf(30) // minutes per column
@@ -174,42 +180,39 @@ class CableBox(private val ctx: Context) {
 
     // ---- CRT ----
 
-    fun cycleCrtMode() {
-        crtMode = when (crtMode) {
-            CrtMode.OFF -> CrtMode.LOTTES_FAST
-            CrtMode.LOTTES_FAST -> CrtMode.LOTTES
-            CrtMode.LOTTES -> CrtMode.OFF
-        }
+    /** Parameter rows shown in the panel for the current style. */
+    val crtSpecs: List<CrtParamSpec> get() = CrtSpecs.all
+
+    fun toggleCrt() {
+        crtOn = !crtOn
+        saveCrt()
         applyCrt()
         bannerAt = System.currentTimeMillis()
         beep?.startTone(ToneGenerator.TONE_PROP_BEEP, 40)
     }
 
     fun applyCrt() {
-        val effects = if (crtMode == CrtMode.OFF) {
-            emptyList()
-        } else {
-            listOf(CrtEffect(crtMode, crtParams))
-        }
-        player.setVideoEffects(effects)
+        player.setVideoEffects(if (crtOn) listOf(CrtEffect(crtStyle, crtParams)) else emptyList())
     }
 
-    fun adjustCrtParam(delta: Float) {
-        val p = crtParams
-        crtParams = when (crtParamIndex) {
-            0 -> p.copy(hardScan = (p.hardScan + delta).coerceIn(-20f, 0f))
-            1 -> p.copy(hardPix = (p.hardPix + delta).coerceIn(-20f, 0f))
-            2 -> p.copy(warpX = (p.warpX + delta * 0.005f).coerceIn(0f, 0.125f))
-            3 -> p.copy(warpY = (p.warpY + delta * 0.005f).coerceIn(0f, 0.125f))
-            4 -> p.copy(maskDark = (p.maskDark + delta * 0.05f).coerceIn(0f, 2f))
-            5 -> p.copy(maskLight = (p.maskLight + delta * 0.05f).coerceIn(0f, 2f))
-            6 -> p.copy(shadowMask = (p.shadowMask + delta).coerceIn(0f, 4f))
-            7 -> p.copy(brightBoost = (p.brightBoost + delta * 0.05f).coerceIn(0.5f, 2f))
-            8 -> p.copy(bloomAmount = (p.bloomAmount + delta * 0.05f).coerceIn(0f, 1f))
-            9 -> p.copy(shape = (p.shape + delta * 0.1f).coerceIn(0.5f, 10f))
-            else -> p
+    private fun crtMenuAdjust(dir: Float) {
+        if (crtParamIndex == 0) {
+            val all = CrtStyle.entries
+            crtStyle = all[Math.floorMod(all.indexOf(crtStyle) + dir.toInt(), all.size)]
+            crtParamIndex = 0
+        } else {
+            crtParams = CrtSpecs.adjust(crtParams, crtSpecs[crtParamIndex - 1], dir)
         }
-        applyCrt()
+        saveCrt()
+        if (crtOn) applyCrt()
+    }
+
+    private fun saveCrt() {
+        prefs.edit().apply {
+            putBoolean("on", crtOn)
+            putString("style", crtStyle.name)
+            crtParams.toArray().forEachIndexed { i, v -> putFloat("p$i", v) }
+        }.apply()
     }
 
     // ---- Audio focus (safe; does not break existing behaviour) ----
@@ -266,23 +269,20 @@ class CableBox(private val ctx: Context) {
             addDigit(code - KeyEvent.KEYCODE_0)
             return true
         }
-        // Long-press style: KEYCODE_PROG_RED or KEYCODE_TV_INPUT_HDMI_1 as CRT cycle on many remotes;
-        // also support KEYCODE_BUTTON_L1 / KEYCODE_F1 as a reliable fallback.
+        // CRT on/off: Red / L1 / F1. CRT panel (style + settings): Green / R1 / F2.
         if (code == KeyEvent.KEYCODE_PROG_RED ||
             code == KeyEvent.KEYCODE_BUTTON_L1 ||
             code == KeyEvent.KEYCODE_F1
         ) {
-            cycleCrtMode()
+            toggleCrt()
             return true
         }
         if (code == KeyEvent.KEYCODE_PROG_GREEN ||
             code == KeyEvent.KEYCODE_BUTTON_R1 ||
             code == KeyEvent.KEYCODE_F2
         ) {
-            if (crtMode != CrtMode.OFF) {
-                crtMenu = true
-                crtParamIndex = 0
-            }
+            crtMenu = true
+            crtParamIndex = 0
             return true
         }
         return if (mode == Mode.WATCH) watchKey(code) else guideKey(code)
@@ -290,25 +290,29 @@ class CableBox(private val ctx: Context) {
 
     private fun crtMenuKey(c: Int): Boolean = when (c) {
         KeyEvent.KEYCODE_DPAD_UP -> {
-            crtParamIndex = (crtParamIndex - 1).mod(10)
+            crtParamIndex = (crtParamIndex - 1).mod(crtSpecs.size + 1)
             true
         }
         KeyEvent.KEYCODE_DPAD_DOWN -> {
-            crtParamIndex = (crtParamIndex + 1).mod(10)
+            crtParamIndex = (crtParamIndex + 1).mod(crtSpecs.size + 1)
             true
         }
         KeyEvent.KEYCODE_DPAD_LEFT -> {
-            adjustCrtParam(-1f)
+            crtMenuAdjust(-1f)
             true
         }
         KeyEvent.KEYCODE_DPAD_RIGHT -> {
-            adjustCrtParam(1f)
+            crtMenuAdjust(1f)
             true
         }
         KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
         KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_PROG_GREEN,
         KeyEvent.KEYCODE_BUTTON_R1, KeyEvent.KEYCODE_F2 -> {
             crtMenu = false
+            true
+        }
+        KeyEvent.KEYCODE_PROG_RED, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_F1 -> {
+            toggleCrt()
             true
         }
         else -> false

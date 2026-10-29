@@ -150,11 +150,7 @@ private fun BoxScope.Banner(box: CableBox, now: Long) {
     if (now - box.bannerAt > 4500) return
     val ch = box.channels.first { it.number == box.tuned }
     val slot = Schedule.at(box.schedules[box.tuned].orEmpty(), now)
-    val crtLabel = when (box.crtMode) {
-        CrtMode.OFF -> null
-        CrtMode.LOTTES_FAST -> "CRT FAST"
-        CrtMode.LOTTES -> "CRT LOTTES"
-    }
+    val crtLabel = if (box.crtOn) "CRT ${box.crtStyle.label}" else null
     Column(
         Modifier.align(Alignment.BottomCenter).fillMaxWidth()
             .background(Brush.verticalGradient(listOf(Color(0xCC16248F), Color(0xF005082B))))
@@ -186,25 +182,9 @@ private fun BoxScope.Banner(box: CableBox, now: Long) {
 /** Simple on-screen CRT parameter panel (same navy/gold language as the guide). */
 @Composable
 private fun BoxScope.CrtMenu(box: CableBox) {
-    val labels = listOf(
-        "HARD SCAN", "HARD PIX", "WARP X", "WARP Y",
-        "MASK DARK", "MASK LIGHT", "SHADOW MASK", "BRIGHT BOOST",
-        "BLOOM", "SHAPE",
-    )
-    val values = with(box.crtParams) {
-        listOf(
-            "%.1f".format(hardScan),
-            "%.1f".format(hardPix),
-            "%.3f".format(warpX),
-            "%.3f".format(warpY),
-            "%.2f".format(maskDark),
-            "%.2f".format(maskLight),
-            "%.0f".format(shadowMask),
-            "%.2f".format(brightBoost),
-            "%.2f".format(bloomAmount),
-            "%.1f".format(shape),
-        )
-    }
+    val p = box.crtParams.toArray()
+    val rows = listOf("STYLE" to "◀ ${box.crtStyle.label} ▶") +
+        box.crtSpecs.map { it.label to it.format.format(p[it.index]) }
     Column(
         Modifier
             .align(Alignment.CenterEnd)
@@ -214,17 +194,9 @@ private fun BoxScope.CrtMenu(box: CableBox) {
             .border(2.dp, Edge)
             .padding(20.dp),
     ) {
-        T(
-            when (box.crtMode) {
-                CrtMode.LOTTES -> "CRT LOTTES"
-                CrtMode.LOTTES_FAST -> "CRT LOTTES FAST"
-                else -> "CRT"
-            },
-            26,
-            Gold,
-        )
+        T("CRT  " + if (box.crtOn) "ON" else "OFF", 26, Gold)
         Spacer(Modifier.height(12.dp))
-        labels.forEachIndexed { i, label ->
+        rows.forEachIndexed { i, (label, value) ->
             val on = i == box.crtParamIndex
             Row(
                 Modifier
@@ -234,11 +206,11 @@ private fun BoxScope.CrtMenu(box: CableBox) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 T(label, 16, if (on) Ink else Color.White, mod = Modifier.weight(1f))
-                T(values[i], 16, if (on) Ink else Edge)
+                T(value, 16, if (on) Ink else Edge)
             }
         }
         Spacer(Modifier.height(10.dp))
-        T("← → adjust   ↑ ↓ select   OK close", 14, Edge)
+        T("← → adjust   ↑ ↓ select   RED on/off   OK close", 14, Edge)
     }
 }
 

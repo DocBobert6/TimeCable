@@ -21,7 +21,7 @@ import androidx.media3.effect.BaseGlShaderProgram
 class CrtShaderProgram(
     context: Context,
     useHdr: Boolean,
-    private val mode: CrtMode,
+    private val style: CrtStyle,
     private val params: CrtParams,
 ) : BaseGlShaderProgram(/* useHighPrecisionColorComponents = */ useHdr, /* texturePoolCapacity = */ 2) {
 
@@ -30,9 +30,9 @@ class CrtShaderProgram(
     private var inputHeight = 0
 
     init {
-        val fragment = when (mode) {
-            CrtMode.LOTTES_FAST -> FRAGMENT_FAST
-            else -> FRAGMENT_FULL
+        val fragment = when (style) {
+            CrtStyle.LOTTES_FAST -> FRAGMENT_FAST
+            CrtStyle.LOTTES -> FRAGMENT_FULL
         }
         try {
             glProgram = GlProgram(VERTEX, fragment)
@@ -63,18 +63,7 @@ class CrtShaderProgram(
             glProgram.setFloatsUniform("uTexSize", floatArrayOf(inputWidth.toFloat(), inputHeight.toFloat()))
             glProgram.setFloatsUniform(
                 "uParams",
-                floatArrayOf(
-                    params.hardScan,
-                    params.hardPix,
-                    params.warpX,
-                    params.warpY,
-                    params.maskDark,
-                    params.maskLight,
-                    params.shadowMask,
-                    params.brightBoost,
-                    params.bloomAmount,
-                    params.shape,
-                ),
+                params.toArray(),
             )
             glProgram.bindAttributesAndUniforms()
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, /* first = */ 0, /* count = */ 4)

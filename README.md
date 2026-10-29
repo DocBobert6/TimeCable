@@ -14,8 +14,8 @@ No backend. Targets Android TV / Google TV (API 26+, built for API 34), landscap
 ## Remote
 - Watch: Up/Down = next/prev, Left = last, 0-9 = jump (3 digits or pause), OK/Guide/Menu = guide, Info = banner
 - Guide: Up/Down = row, Left/Right = time (+/- 30 min), OK = tune, Back/Guide = close, ChUp/ChDn = 5 rows
-- CRT: Red / L1 / F1 = cycle Off → Lottes Fast → Lottes → Off (off by default)
-- CRT params: Green / R1 / F2 opens the parameter panel (when a CRT mode is active).
+- CRT: Red / L1 / F1 = switch CRT on/off (off by default; remembered)
+- CRT panel: Green / R1 / F2 opens it. First row picks the style (Lottes Fast or Lottes) with Left/Right.
   Up/Down select, Left/Right adjust, OK or Green closes.
 
 ## CRT shaders
