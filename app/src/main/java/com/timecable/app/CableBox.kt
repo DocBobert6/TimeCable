@@ -181,7 +181,8 @@ class CableBox(private val ctx: Context) {
     // ---- CRT ----
 
     /** Parameter rows shown in the panel for the current style. */
-    val crtSpecs: List<CrtParamSpec> get() = CrtSpecs.all
+    val crtSpecs: List<CrtParamSpec> get() = CrtSpecs.forStyle(crtStyle)
+    private val crtLive = CrtLive(CrtParams.Default)
 
     fun toggleCrt() {
         crtOn = !crtOn
@@ -192,19 +193,21 @@ class CableBox(private val ctx: Context) {
     }
 
     fun applyCrt() {
-        player.setVideoEffects(if (crtOn) listOf(CrtEffect(crtStyle, crtParams)) else emptyList())
+        crtLive.params = crtParams
+        player.setVideoEffects(if (crtOn) listOf(CrtEffect(crtStyle, crtLive)) else emptyList())
     }
 
     private fun crtMenuAdjust(dir: Float) {
         if (crtParamIndex == 0) {
             val all = CrtStyle.entries
             crtStyle = all[Math.floorMod(all.indexOf(crtStyle) + dir.toInt(), all.size)]
-            crtParamIndex = 0
+            saveCrt()
+            if (crtOn) applyCrt()
         } else {
             crtParams = CrtSpecs.adjust(crtParams, crtSpecs[crtParamIndex - 1], dir)
+            crtLive.params = crtParams // live: picked up on the next frame, no pipeline rebuild
+            saveCrt()
         }
-        saveCrt()
-        if (crtOn) applyCrt()
     }
 
     private fun saveCrt() {

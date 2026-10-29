@@ -23,8 +23,8 @@ Media3 Effects (OpenGL ES) ports of Timothy Lottes' public-domain CRT algorithm:
 - **Lottes Fast** – scanlines + aperture mask + mild barrel warp (cheap, good on sticks)
 - **Lottes** – full single-pass: Gaussian soft pixels, scanline weighting, aperture/VGA mask, bloom
 
-All parameters (hardScan, hardPix, warp, mask, bloom, brightness, shape) are adjustable live
-from the on-screen panel. Defaults match the classic Lottes reference.
+All parameters (hard scan, hard pix, warp, mask, bloom, brightness, shape, TV lines) are adjustable live
+from the on-screen panel; Fast hides the ones it does not use. TV LINES sets the virtual scanline count (default 240).
 
 Note: Android video effects run on OpenGL ES, not Vulkan. The math is the same Lottes
 algorithm; only the shading language / pipeline differs from RetroArch-style Vulkan shaders.
