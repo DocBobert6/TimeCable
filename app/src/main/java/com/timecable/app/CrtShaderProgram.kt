@@ -92,7 +92,7 @@ class CrtShaderProgram(
 
     companion object {
         // Matches Media3 internal transformation vertex shader shape.
-        private const val VERTEX = """
+        private val VERTEX = """
             #version 100
             attribute vec4 aFramePosition;
             uniform mat4 uTransformationMatrix;
@@ -113,7 +113,7 @@ class CrtShaderProgram(
          * - aperture / shadow mask
          * - small bloom
          */
-        private const val FRAGMENT_FULL = """
+        private val FRAGMENT_FULL = """
             #version 100
             precision mediump float;
             varying vec2 vTexCoord;
@@ -239,7 +239,7 @@ class CrtShaderProgram(
          * Fast path: fewer taps, still has scanlines + mask + mild warp.
          * Much cheaper on low-end Android TV sticks.
          */
-        private const val FRAGMENT_FAST = """
+        private val FRAGMENT_FAST = """
             #version 100
             precision mediump float;
             varying vec2 vTexCoord;
