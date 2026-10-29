@@ -1,8 +1,8 @@
 # TimeCable
 
-Android TV app: a 2000s digital-cable guide and "live" tuner over public Internet Archive video.
+Android phone + TV app: a 2000s digital-cable guide and "live" tuner over public Internet Archive video.
 Each row is a looping, time-anchored playlist, so what is on at any moment depends only on the clock.
-No backend. Targets Android TV / Google TV (API 26+, built for API 34), landscape.
+No backend. Phone-first touch UI (portrait or landscape) with a mid-2000s cable-box look; Android TV remotes also work (API 26+).
 
 ## Build
 1. Open this folder in Android Studio (Ladybug or newer). Let Gradle sync. If Studio proposes
@@ -11,7 +11,12 @@ No backend. Targets Android TV / Google TV (API 26+, built for API 34), landscap
    Command line: run `gradle wrapper` once, then `./gradlew assembleDebug`
    -> app/build/outputs/apk/debug/app-debug.apk, then `adb install -r` it.
 
-## Remote
+## Touch (phone)
+- Watch: tap = info banner + controls (CH ▲/▼, LAST, GUIDE, CRT); swipe up/down = change channel
+- Guide: tap a channel name to preview its info, tap a show to watch, ◀ ▶ = move through time, ✕ = close
+- CRT panel: ON/OFF, pick style, − / + for each setting
+
+## Remote (secondary)
 - Watch: Up/Down = next/prev, Left = last, 0-9 = jump (3 digits or pause), OK/Guide/Menu = guide, Info = banner
 - Guide: Up/Down = row, Left/Right = time (+/- 30 min), OK = tune, Back/Guide = close, ChUp/ChDn = 5 rows
 - CRT: Red / L1 / F1 = switch CRT on/off (off by default; remembered)

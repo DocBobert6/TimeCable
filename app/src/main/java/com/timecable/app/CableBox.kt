@@ -197,6 +197,17 @@ class CableBox(private val ctx: Context) {
         player.setVideoEffects(if (crtOn) listOf(CrtEffect(crtStyle, crtLive)) else emptyList())
     }
 
+    /** Touch: adjust panel [row] (0 = style) by one step in [dir]. */
+    fun crtAdjust(row: Int, dir: Float) {
+        crtParamIndex = row
+        crtMenuAdjust(dir)
+    }
+
+    fun openCrtMenu() {
+        crtMenu = true
+        crtParamIndex = 0
+    }
+
     private fun crtMenuAdjust(dir: Float) {
         if (crtParamIndex == 0) {
             val all = CrtStyle.entries
@@ -284,8 +295,7 @@ class CableBox(private val ctx: Context) {
             code == KeyEvent.KEYCODE_BUTTON_R1 ||
             code == KeyEvent.KEYCODE_F2
         ) {
-            crtMenu = true
-            crtParamIndex = 0
+            openCrtMenu()
             return true
         }
         return if (mode == Mode.WATCH) watchKey(code) else guideKey(code)
@@ -322,9 +332,17 @@ class CableBox(private val ctx: Context) {
     }
 
     private fun idx() = channels.indexOfFirst { it.number == tuned }
-    private fun step(d: Int) = tune(channels[Math.floorMod(idx() + d, channels.size)].number)
+    fun step(d: Int) = tune(channels[Math.floorMod(idx() + d, channels.size)].number)
 
-    private fun openGuide() {
+    fun tuneLast() = tune(last)
+
+    /** Tune [n] and return to full-screen watching (guide taps). */
+    fun watch(n: Int) {
+        tune(n)
+        mode = Mode.WATCH
+    }
+
+    fun openGuide() {
         sel = idx()
         shift = 0
         mode = Mode.GUIDE
